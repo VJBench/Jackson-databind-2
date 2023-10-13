@@ -18,10 +18,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
  */
 public class SubTypeValidator
 {
-    protected final static String PREFIX_SPRING = "org.springframework.";
-
-    protected final static String PREFIX_C3P0 = "com.mchange.v2.c3p0.";
-
+    protected final static String PREFIX_STRING = "org.springframework.";
     /**
      * Set of well-known "nasty classes", deserialization of which is considered dangerous
      * and should (and is) prevented by default.
@@ -48,13 +45,11 @@ public class SubTypeValidator
         // [databind#1737]; 3rd party
 //s.add("org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor"); // deprecated by [databind#1855]
         s.add("org.springframework.beans.factory.config.PropertyPathFactoryBean");
-
-// s.add("com.mchange.v2.c3p0.JndiRefForwardingDataSource"); // deprecated by [databind#1931]
-// s.add("com.mchange.v2.c3p0.WrapperConnectionPoolDataSource"); // - "" -
+        s.add("com.mchange.v2.c3p0.JndiRefForwardingDataSource");
+        s.add("com.mchange.v2.c3p0.WrapperConnectionPoolDataSource");
         // [databind#1855]: more 3rd party
         s.add("org.apache.tomcat.dbcp.dbcp2.BasicDataSource");
         s.add("com.sun.org.apache.bcel.internal.util.ClassLoader");
-
         DEFAULT_NO_DESER_CLASS_NAMES = Collections.unmodifiableSet(s);
     }
 
@@ -85,9 +80,7 @@ public class SubTypeValidator
             // 18-Dec-2017, tatu: As per [databind#1855], need bit more sophisticated handling
             //    for some Spring framework types
             // 05-Jan-2017, tatu: ... also, only applies to classes, not interfaces
-            if (raw.isInterface()) {
-                ;
-            } else if (full.startsWith(PREFIX_SPRING)) {
+            if (!raw.isInterface() && full.startsWith(PREFIX_STRING)) {
                 for (Class<?> cls = raw; (cls != null) && (cls != Object.class); cls = cls.getSuperclass()){
                     String name = cls.getSimpleName();
                     // looking for "AbstractBeanFactoryPointcutAdvisor" but no point to allow any is there?
@@ -96,16 +89,6 @@ public class SubTypeValidator
                             || "AbstractApplicationContext".equals(name)) {
                         break main_check;
                     }
-                }
-            } else if (full.startsWith(PREFIX_C3P0)) {
-                // [databind#1737]; more 3rd party
-                // s.add("com.mchange.v2.c3p0.JndiRefForwardingDataSource");
-                // s.add("com.mchange.v2.c3p0.WrapperConnectionPoolDataSource");
-                // [databind#1931]; more 3rd party
-                // com.mchange.v2.c3p0.ComboPooledDataSource
-                // com.mchange.v2.c3p0.debug.AfterCloseLoggingComboPooledDataSource 
-                if (full.endsWith("DataSource")) {
-                    break main_check;
                 }
             }
             return;
